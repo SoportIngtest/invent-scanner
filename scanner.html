@@ -30,9 +30,16 @@
     }
 
 
+    html,
     body {
-
       margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+    }
+
+
+    body {
 
       font-family:
         Arial,
@@ -57,9 +64,13 @@
     }
 
 
+    /************************************************
+     * HEADER
+     ************************************************/
+
     .header {
 
-      padding: 16px;
+      padding: 14px 16px;
 
       background: #202124;
 
@@ -88,6 +99,85 @@
     }
 
 
+    /************************************************
+     * SELECTOR DE MODO
+     ************************************************/
+
+    .mode-selector {
+
+      padding: 12px;
+
+      background: #292a2d;
+
+      display: grid;
+
+      grid-template-columns:
+        1fr 1fr;
+
+      gap: 8px;
+
+    }
+
+
+    .mode-button {
+
+      min-height: 50px;
+
+      border: 2px solid #5f6368;
+
+      border-radius: 10px;
+
+      background: #202124;
+
+      color: #d7d7d7;
+
+      font-size: 14px;
+
+      font-weight: 700;
+
+      cursor: pointer;
+
+      transition:
+        background .15s,
+        border-color .15s,
+        transform .1s;
+
+    }
+
+
+    .mode-button:active {
+
+      transform: scale(.98);
+
+    }
+
+
+    .mode-button.active {
+
+      background: #1a73e8;
+
+      border-color: #8ab4f8;
+
+      color: white;
+
+    }
+
+
+    .mode-button .mode-icon {
+
+      display: block;
+
+      font-size: 21px;
+
+      margin-bottom: 2px;
+
+    }
+
+
+    /************************************************
+     * SCANNER
+     ************************************************/
+
     .scanner {
 
       flex: 1;
@@ -98,6 +188,10 @@
 
     }
 
+
+    /************************************************
+     * VIDEO
+     ************************************************/
 
     .video-container {
 
@@ -122,8 +216,14 @@
 
       object-fit: cover;
 
+      display: block;
+
     }
 
+
+    /************************************************
+     * MARCO GENERAL
+     ************************************************/
 
     .frame {
 
@@ -133,29 +233,75 @@
 
       left: 50%;
 
+      transform:
+        translate(-50%, -50%);
+
+      pointer-events: none;
+
+      transition:
+        width .2s,
+        height .2s;
+
+    }
+
+
+    /************************************************
+     * MODO BARRAS
+     *
+     * Conservamos la lógica visual original:
+     * área horizontal.
+     ************************************************/
+
+    .frame.barcode-frame {
+
       width: 86%;
 
       height: 28%;
-
-      transform:
-        translate(-50%, -50%);
 
       border:
         2px solid
         rgba(255,255,255,.25);
 
-      pointer-events: none;
+    }
+
+
+    /************************************************
+     * MODO QR
+     *
+     * Área cuadrada mucho más grande.
+     *
+     * Esto permite que un QR pequeño ocupe
+     * una zona mucho mayor de la cámara.
+     ************************************************/
+
+    .frame.qr-frame {
+
+      width: 82vw;
+
+      height: 82vw;
+
+      max-width: 82vh;
+
+      max-height: 82vh;
+
+      border:
+        2px solid
+        rgba(255,255,255,.35);
 
     }
 
+
+    /************************************************
+     * ESQUINAS
+     ************************************************/
 
     .corner {
 
       position: absolute;
 
-      width: 34px;
+      width: 36px;
 
-      height: 34px;
+      height: 36px;
 
       border-color: #00ff88;
 
@@ -212,6 +358,10 @@
     }
 
 
+    /************************************************
+     * LINEA DE ESCANEO
+     ************************************************/
+
     .line {
 
       position: absolute;
@@ -227,27 +377,72 @@
       background: #00ff88;
 
       animation:
-        scan 1.8s infinite;
+        scanBarcode 1.8s infinite;
 
     }
 
 
-    @keyframes scan {
+    @keyframes scanBarcode {
 
       0% {
-        transform: translateY(-45px);
+        transform:
+          translateY(-45px);
       }
 
       50% {
-        transform: translateY(45px);
+        transform:
+          translateY(45px);
       }
 
       100% {
-        transform: translateY(-45px);
+        transform:
+          translateY(-45px);
       }
 
     }
 
+
+    /************************************************
+     * LINEA QR
+     *
+     * Movimiento más corto dentro del cuadro.
+     ************************************************/
+
+    .qr-frame .line {
+
+      left: 5%;
+
+      right: 5%;
+
+      animation:
+        scanQr 2s infinite;
+
+    }
+
+
+    @keyframes scanQr {
+
+      0% {
+        transform:
+          translateY(-30%);
+      }
+
+      50% {
+        transform:
+          translateY(30%);
+      }
+
+      100% {
+        transform:
+          translateY(-30%);
+      }
+
+    }
+
+
+    /************************************************
+     * ESTADO
+     ************************************************/
 
     .status {
 
@@ -261,8 +456,14 @@
 
       font-weight: 600;
 
+      min-height: 48px;
+
     }
 
+
+    /************************************************
+     * RESULTADO
+     ************************************************/
 
     .result {
 
@@ -312,8 +513,14 @@
 
       line-height: 1.4;
 
+      user-select: text;
+
     }
 
+
+    /************************************************
+     * BOTONES
+     ************************************************/
 
     .actions {
 
@@ -384,6 +591,10 @@
     }
 
 
+    /************************************************
+     * FOTO
+     ************************************************/
+
     .photo-area {
 
       display: none;
@@ -426,6 +637,10 @@
     }
 
 
+    /************************************************
+     * AYUDA
+     ************************************************/
+
     .help {
 
       padding: 12px 15px;
@@ -443,18 +658,112 @@
     }
 
 
+    .help strong {
+
+      color: white;
+
+    }
+
+
+    /************************************************
+     * CELULAR
+     ************************************************/
+
     @media (max-width: 480px) {
 
-      .actions {
+      .header {
 
-        grid-template-columns:
-          1fr 1fr;
+        padding:
+          12px;
 
       }
+
+
+      .header h1 {
+
+        font-size: 18px;
+
+      }
+
+
+      .mode-selector {
+
+        padding: 10px;
+
+      }
+
+
+      .mode-button {
+
+        min-height: 54px;
+
+        font-size: 13px;
+
+      }
+
+
+      .mode-button .mode-icon {
+
+        font-size: 20px;
+
+      }
+
+
+      .frame.barcode-frame {
+
+        width: 92%;
+
+        height: 30%;
+
+      }
+
+
+      .frame.qr-frame {
+
+        width: 88vw;
+
+        height: 88vw;
+
+        max-width: 88vh;
+
+        max-height: 88vh;
+
+      }
+
 
       button {
 
         font-size: 13px;
+
+      }
+
+    }
+
+
+    /************************************************
+     * PANTALLAS MUY BAJAS
+     ************************************************/
+
+    @media (
+      max-height: 650px
+    ) {
+
+      .video-container {
+
+        min-height: 45vh;
+
+      }
+
+
+      .frame.qr-frame {
+
+        width: 72vh;
+
+        height: 72vh;
+
+        max-width: 82vw;
+
+        max-height: 82vw;
 
       }
 
@@ -471,15 +780,61 @@
 <div class="app">
 
 
+  <!-- ============================================
+       HEADER
+       ============================================ -->
+
   <div class="header">
 
     <h1>
       📷 Escáner de inventario
     </h1>
 
-    <p>
-      Barras y códigos QR
+    <p id="subtitulo">
+      Código de barras
     </p>
+
+  </div>
+
+
+  <!-- ============================================
+       SELECTOR DE MODO
+       ============================================ -->
+
+  <div class="mode-selector">
+
+
+    <button
+      type="button"
+      id="modoBarras"
+      class="mode-button active"
+      onclick="seleccionarModo('barras')"
+    >
+
+      <span class="mode-icon">
+        ▥
+      </span>
+
+      Código de barras
+
+    </button>
+
+
+    <button
+      type="button"
+      id="modoQr"
+      class="mode-button"
+      onclick="seleccionarModo('qr')"
+    >
+
+      <span class="mode-icon">
+        ▦
+      </span>
+
+      Código QR
+
+    </button>
+
 
   </div>
 
@@ -487,11 +842,14 @@
   <div class="scanner">
 
 
-    <!-- ========================================
+    <!-- =========================================
          CÁMARA
-         ======================================== -->
+         ========================================= -->
 
-    <div class="video-container">
+    <div
+      id="videoContainer"
+      class="video-container"
+    >
 
 
       <video
@@ -502,7 +860,10 @@
       ></video>
 
 
-      <div class="frame">
+      <div
+        id="frame"
+        class="frame barcode-frame"
+      >
 
         <div class="corner top-left"></div>
 
@@ -520,9 +881,9 @@
     </div>
 
 
-    <!-- ========================================
+    <!-- =========================================
          FOTO CAPTURADA
-         ======================================== -->
+         ========================================= -->
 
     <div
       id="photoArea"
@@ -542,9 +903,9 @@
     ></canvas>
 
 
-    <!-- ========================================
+    <!-- =========================================
          ESTADO
-         ======================================== -->
+         ========================================= -->
 
     <div
       id="status"
@@ -556,9 +917,9 @@
     </div>
 
 
-    <!-- ========================================
+    <!-- =========================================
          RESULTADO
-         ======================================== -->
+         ========================================= -->
 
     <div
       id="result"
@@ -580,24 +941,30 @@
     </div>
 
 
-    <!-- ========================================
+    <!-- =========================================
          AYUDA
-         ======================================== -->
+         ========================================= -->
 
-    <div class="help">
+    <div
+      id="help"
+      class="help"
+    >
 
-      Si la cámara no detecta el código,
-      pulse <strong>📸 Tomar foto</strong>.
-      La imagen se analizará nuevamente.
+      Apunte al código de barras dentro del
+      área horizontal.
+
+      Si no lo detecta, pulse
+      <strong>📸 Tomar foto</strong>.
 
     </div>
 
 
-    <!-- ========================================
+    <!-- =========================================
          BOTONES
-         ======================================== -->
+         ========================================= -->
 
     <div class="actions">
+
 
       <button
         id="btnFoto"
@@ -643,6 +1010,7 @@
 
       </button>
 
+
     </div>
 
 
@@ -659,6 +1027,7 @@
  * VARIABLES
  ****************************************************/
 
+
 let reader = null;
 
 let controls = null;
@@ -670,9 +1039,62 @@ let codigoDetectado = '';
 let dispositivoSeleccionado = null;
 
 
+/*
+ * Modo actual.
+ *
+ * 'barras'
+ * 'qr'
+ */
+
+let modoActual = 'barras';
+
+
+/*
+ * Evita iniciar varias cámaras
+ * simultáneamente.
+ */
+
+let iniciandoCamara = false;
+
+
+/****************************************************
+ * FORMATOS DE CÓDIGOS DE BARRAS
+ *
+ * Se mantienen los formatos generales.
+ ****************************************************/
+
+
+const FORMATOS_BARRAS = [
+
+  ZXingBrowser.BarcodeFormat.CODE_128,
+
+  ZXingBrowser.BarcodeFormat.CODE_39,
+
+  ZXingBrowser.BarcodeFormat.CODE_93,
+
+  ZXingBrowser.BarcodeFormat.CODABAR,
+
+  ZXingBrowser.BarcodeFormat.EAN_8,
+
+  ZXingBrowser.BarcodeFormat.EAN_13,
+
+  ZXingBrowser.BarcodeFormat.ITF,
+
+  ZXingBrowser.BarcodeFormat.UPC_A,
+
+  ZXingBrowser.BarcodeFormat.UPC_E,
+
+  ZXingBrowser.BarcodeFormat.RSS_14,
+
+  ZXingBrowser.BarcodeFormat.RSS_EXPANDED
+
+];
+
+
 /****************************************************
  * INICIO
  ****************************************************/
+
 
 document.addEventListener(
   'DOMContentLoaded',
@@ -681,8 +1103,144 @@ document.addEventListener(
 
 
 /****************************************************
- * INICIAR
+ * SELECCIONAR MODO
  ****************************************************/
+
+
+function seleccionarModo(
+  modo
+) {
+
+  if (
+    modo !== 'barras' &&
+    modo !== 'qr'
+  ) {
+
+    return;
+
+  }
+
+
+  modoActual =
+    modo;
+
+
+  const botonBarras =
+    document.getElementById(
+      'modoBarras'
+    );
+
+
+  const botonQr =
+    document.getElementById(
+      'modoQr'
+    );
+
+
+  const frame =
+    document.getElementById(
+      'frame'
+    );
+
+
+  const subtitulo =
+    document.getElementById(
+      'subtitulo'
+    );
+
+
+  const help =
+    document.getElementById(
+      'help'
+    );
+
+
+  botonBarras.classList.toggle(
+    'active',
+    modo === 'barras'
+  );
+
+
+  botonQr.classList.toggle(
+    'active',
+    modo === 'qr'
+  );
+
+
+  frame.classList.remove(
+    'barcode-frame',
+    'qr-frame'
+  );
+
+
+  if (
+    modo === 'qr'
+  ) {
+
+    frame.classList.add(
+      'qr-frame'
+    );
+
+
+    subtitulo.textContent =
+      'Código QR';
+
+
+    help.innerHTML =
+
+      'Modo QR activado. ' +
+
+      'Coloque el código dentro del cuadro. ' +
+
+      'El área de lectura es amplia para códigos pequeños. ' +
+
+      'Si no lo detecta, pulse <strong>📸 Tomar foto</strong>.';
+
+
+  } else {
+
+    frame.classList.add(
+      'barcode-frame'
+    );
+
+
+    subtitulo.textContent =
+      'Código de barras';
+
+
+    help.innerHTML =
+
+      'Modo barras activado. ' +
+
+      'Apunte al código dentro del área horizontal. ' +
+
+      'Si no lo detecta, pulse <strong>📸 Tomar foto</strong>.';
+
+  }
+
+
+  /*
+   * Si la cámara está activa,
+   * reiniciamos la lectura para aplicar
+   * el nuevo formato.
+   */
+
+  if (
+    reader &&
+    activo
+  ) {
+
+    reiniciarLectura();
+
+  }
+
+}
+
+
+/****************************************************
+ * INICIO DE CÁMARA
+ ****************************************************/
+
 
 async function iniciar() {
 
@@ -728,15 +1286,22 @@ async function iniciar() {
         video: {
 
           facingMode: {
-            ideal: 'environment'
+
+            ideal:
+              'environment'
+
           },
 
           width: {
+
             ideal: 1920
+
           },
 
           height: {
+
             ideal: 1080
+
           }
 
         },
@@ -745,6 +1310,11 @@ async function iniciar() {
 
       });
 
+
+    /*
+     * Solo usamos este stream temporalmente
+     * para confirmar que tenemos permiso.
+     */
 
     stream
       .getTracks()
@@ -785,6 +1355,10 @@ async function iniciar() {
     dispositivoSeleccionado =
       dispositivos[0];
 
+
+    /*
+     * Buscar preferentemente la cámara trasera.
+     */
 
     for (
       const camara of dispositivos
@@ -850,16 +1424,64 @@ async function iniciar() {
 
 
 /****************************************************
- * INICIAR LECTURA CONTINUA
+ * CREAR LECTOR SEGÚN MODO
  ****************************************************/
+
+
+function crearLector() {
+
+  /*
+   * Para QR utilizamos un lector configurado
+   * específicamente para QR.
+   *
+   * Para barras utilizamos los formatos
+   * tradicionales de inventario.
+   */
+
+
+  if (
+    modoActual === 'qr'
+  ) {
+
+    return new ZXingBrowser
+      .BrowserMultiFormatReader();
+
+  }
+
+
+  /*
+   * Modo barras.
+   *
+   * Conservamos BrowserMultiFormatReader
+   * para mantener compatibilidad con tu
+   * funcionamiento anterior.
+   */
+
+  return new ZXingBrowser
+    .BrowserMultiFormatReader();
+
+}
+
+
+/****************************************************
+ * INICIAR LECTURA
+ ****************************************************/
+
 
 async function iniciarLectura() {
 
-  if (!reader) {
+  if (
+    !reader ||
+    iniciandoCamara
+  ) {
 
     return;
 
   }
+
+
+  iniciandoCamara =
+    true;
 
 
   activo =
@@ -872,17 +1494,40 @@ async function iniciarLectura() {
     );
 
 
-  status.textContent =
-    'Apunte al código de barras o QR...';
-
-
   const video =
     document.getElementById(
       'video'
     );
 
 
+  status.textContent =
+
+    modoActual === 'qr'
+
+      ? 'Buscando código QR...'
+
+      : 'Apunte al código de barras...';
+
+
   try {
+
+    /*
+     * En modo QR usamos el lector
+     * multi-formato pero filtramos el resultado
+     * para aceptar exclusivamente QR.
+     */
+
+    const lector =
+      crearLector();
+
+
+    /*
+     * Guardamos el lector actual.
+     */
+
+    reader =
+      lector;
+
 
     controls =
       await reader.decodeFromVideoDevice(
@@ -905,27 +1550,71 @@ async function iniciarLectura() {
           }
 
 
-          if (result) {
+          if (!result) {
 
-            const texto =
-              result
-                .getText()
-                .trim();
+            return;
 
-
-            if (texto) {
-
-              codigoDetectado =
-                texto;
+          }
 
 
-              mostrarResultado(
-                texto
-              );
+          /*
+           * En modo QR solamente aceptamos
+           * resultados cuyo formato sea QR.
+           */
+
+          if (
+            modoActual === 'qr'
+          ) {
+
+            try {
+
+              const formato =
+                result.getBarcodeFormat();
+
+
+              const esQr =
+
+                formato ===
+                ZXingBrowser.BarcodeFormat.QR_CODE;
+
+
+              if (!esQr) {
+
+                return;
+
+              }
+
+            } catch (e) {
+
+              /*
+               * Si el navegador/versión de ZXing
+               * no permite consultar el formato,
+               * aceptamos el resultado porque el
+               * lector ya está trabajando en modo
+               * QR.
+               */
 
             }
 
           }
+
+
+          const texto =
+            result
+              .getText()
+              .trim();
+
+
+          if (!texto) {
+
+            return;
+
+          }
+
+
+          mostrarResultado(
+            texto
+          );
 
         }
 
@@ -940,7 +1629,18 @@ async function iniciarLectura() {
 
 
     status.textContent =
-      '⚠ No se pudo iniciar la lectura.';
+
+      modoActual === 'qr'
+
+        ? '⚠ No se pudo iniciar el lector QR.'
+
+        : '⚠ No se pudo iniciar la lectura.';
+
+
+  } finally {
+
+    iniciandoCamara =
+      false;
 
   }
 
@@ -948,8 +1648,72 @@ async function iniciarLectura() {
 
 
 /****************************************************
+ * REINICIAR LECTURA
+ ****************************************************/
+
+
+async function reiniciarLectura() {
+
+  activo =
+    false;
+
+
+  detenerCamara();
+
+
+  /*
+   * Pequeña pausa para asegurarnos de que
+   * la cámara anterior quedó liberada.
+   */
+
+  await esperar(150);
+
+
+  if (!reader) {
+
+    reader =
+      new ZXingBrowser
+        .BrowserMultiFormatReader();
+
+  }
+
+
+  activo =
+    true;
+
+
+  iniciarLectura();
+
+}
+
+
+/****************************************************
+ * ESPERAR
+ ****************************************************/
+
+
+function esperar(
+  milisegundos
+) {
+
+  return new Promise(
+    function(resolve) {
+
+      setTimeout(
+        resolve,
+        milisegundos
+      );
+
+    }
+  );
+
+}
+
+
+/****************************************************
  * MOSTRAR RESULTADO
  ****************************************************/
+
 
 async function mostrarResultado(
   codigo
@@ -1016,10 +1780,6 @@ async function mostrarResultado(
 
   /*
    * Copiar automáticamente.
-   *
-   * IMPORTANTE:
-   * Esperamos a que la operación de copia
-   * termine completamente.
    */
 
   const copiado =
@@ -1027,9 +1787,8 @@ async function mostrarResultado(
 
 
   /*
-   * Solamente si la copia fue exitosa,
-   * ejecutar la misma función utilizada
-   * por el botón SALIR.
+   * Si se pudo copiar,
+   * regresar automáticamente.
    */
 
   if (copiado) {
@@ -1051,6 +1810,7 @@ async function mostrarResultado(
 /****************************************************
  * COPIA AUTOMÁTICA
  ****************************************************/
+
 
 async function copiarAutomaticamente() {
 
@@ -1074,10 +1834,6 @@ async function copiarAutomaticamente() {
       '✓ Código copiado. Regresando...';
 
 
-    /*
-     * La copia terminó correctamente.
-     */
-
     return true;
 
 
@@ -1095,11 +1851,6 @@ async function copiarAutomaticamente() {
       '✓ Código detectado. Pulse "Copiar".';
 
 
-    /*
-     * Si no se pudo copiar,
-     * NO cerramos la ventana.
-     */
-
     return false;
 
   }
@@ -1110,6 +1861,7 @@ async function copiarAutomaticamente() {
 /****************************************************
  * COPIAR RESULTADO
  ****************************************************/
+
 
 async function copiarResultado() {
 
@@ -1136,7 +1888,7 @@ async function copiarResultado() {
   } catch (error) {
 
     /*
-     * Segundo intento usando textarea.
+     * Segundo intento utilizando textarea.
      */
 
     try {
@@ -1181,6 +1933,7 @@ async function copiarResultado() {
       ).textContent =
         '✓ Código copiado.';
 
+
     } catch (e) {
 
       document.getElementById(
@@ -1198,6 +1951,7 @@ async function copiarResultado() {
 /****************************************************
  * TOMAR FOTO
  ****************************************************/
+
 
 function tomarFoto() {
 
@@ -1246,12 +2000,12 @@ function tomarFoto() {
 
 
   /*
-   * Capturar imagen con resolución
-   * nativa del video.
+   * Capturar imagen a resolución nativa.
    */
 
   canvas.width =
     video.videoWidth;
+
 
   canvas.height =
     video.videoHeight;
@@ -1259,7 +2013,10 @@ function tomarFoto() {
 
   const ctx =
     canvas.getContext(
-      '2d'
+      '2d',
+      {
+        willReadFrequently: true
+      }
     );
 
 
@@ -1295,7 +2052,12 @@ function tomarFoto() {
   document.getElementById(
     'status'
   ).textContent =
-    'Analizando fotografía...';
+
+    modoActual === 'qr'
+
+      ? 'Analizando fotografía para QR...'
+
+      : 'Analizando fotografía...';
 
 
   analizarImagen(
@@ -1308,6 +2070,7 @@ function tomarFoto() {
 /****************************************************
  * ANALIZAR IMAGEN
  ****************************************************/
+
 
 async function analizarImagen(
   dataUrl
@@ -1324,20 +2087,34 @@ async function analizarImagen(
 
         try {
 
-          const canvas =
-            document.createElement(
-              'canvas'
-            );
-
+          /*
+           * Para QR usamos una resolución mayor.
+           *
+           * Esto es importante para códigos QR
+           * pequeños.
+           */
 
           const maxWidth =
-            1800;
+
+            modoActual === 'qr'
+
+              ? 2400
+
+              : 1800;
 
 
           const escala =
             img.width > maxWidth
+
               ? maxWidth / img.width
+
               : 1;
+
+
+          const canvas =
+            document.createElement(
+              'canvas'
+            );
 
 
           canvas.width =
@@ -1370,6 +2147,10 @@ async function analizarImagen(
           );
 
 
+          /*
+           * Lector nuevo.
+           */
+
           const lector =
             new ZXingBrowser
               .BrowserMultiFormatReader();
@@ -1389,6 +2170,44 @@ async function analizarImagen(
             resultado &&
             resultado.getText()
           ) {
+
+            /*
+             * En modo QR comprobamos el formato.
+             */
+
+            if (
+              modoActual === 'qr'
+            ) {
+
+              try {
+
+                const formato =
+                  resultado
+                    .getBarcodeFormat();
+
+
+                if (
+                  formato !==
+                  ZXingBrowser.BarcodeFormat.QR_CODE
+                ) {
+
+                  throw new Error(
+                    'La imagen contiene otro tipo de código.'
+                  );
+
+                }
+
+              } catch (formatoError) {
+
+                /*
+                 * Si la API no expone el formato,
+                 * no bloqueamos el resultado.
+                 */
+
+              }
+
+            }
+
 
             mostrarResultado(
               resultado
@@ -1418,7 +2237,13 @@ async function analizarImagen(
           document.getElementById(
             'status'
           ).textContent =
-            '⚠ No se encontró un código. Acerque la cámara o vuelva a tomar la foto.';
+
+            modoActual === 'qr'
+
+              ? '⚠ No se encontró el QR. Acerque el código y vuelva a tomar la foto.'
+
+              : '⚠ No se encontró un código. Acerque la cámara o vuelva a tomar la foto.';
+
 
           activo =
             false;
@@ -1453,14 +2278,11 @@ async function analizarImagen(
  * NUEVO ESCANEO
  ****************************************************/
 
-function nuevoEscaneo() {
+
+async function nuevoEscaneo() {
 
   codigoDetectado =
     '';
-
-
-  activo =
-    true;
 
 
   document
@@ -1489,7 +2311,34 @@ function nuevoEscaneo() {
   document.getElementById(
     'status'
   ).textContent =
-    'Reiniciando cámara...';
+
+    modoActual === 'qr'
+
+      ? 'Reiniciando lector QR...'
+
+      : 'Reiniciando cámara...';
+
+
+  activo =
+    false;
+
+
+  detenerCamara();
+
+
+  await esperar(150);
+
+
+  /*
+   * Crear lector nuevamente.
+   */
+
+  reader =
+    crearLector();
+
+
+  activo =
+    true;
 
 
   iniciarLectura();
@@ -1500,6 +2349,7 @@ function nuevoEscaneo() {
 /****************************************************
  * DETENER CÁMARA
  ****************************************************/
+
 
 function detenerCamara() {
 
@@ -1514,6 +2364,7 @@ function detenerCamara() {
       console.log(e);
 
     }
+
 
     controls =
       null;
@@ -1570,6 +2421,7 @@ function detenerCamara() {
  * SALIR
  ****************************************************/
 
+
 function salir() {
 
   activo =
@@ -1609,6 +2461,7 @@ function salir() {
 /****************************************************
  * EXPLICAR ERROR
  ****************************************************/
+
 
 function explicarError(error) {
 
@@ -1684,6 +2537,7 @@ function explicarError(error) {
  * LIMPIEZA
  ****************************************************/
 
+
 window.addEventListener(
   'pagehide',
   function() {
@@ -1695,6 +2549,7 @@ window.addEventListener(
 
   }
 );
+
 
 </script>
 
