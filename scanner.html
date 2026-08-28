@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <title>
+    Escáner de Inventario
+  </title>
+
+
+  <script src="https://unpkg.com/@zxing/browser@latest"></script>
+
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+
+    body {
+
+      margin: 0;
+
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+      background: #111;
+
+      color: white;
+
+    }
+
+
+    .app {
+
+      min-height: 100vh;
+
+      display: flex;
+
+      flex-direction: column;
+
+    }
+
+
+    .header {
+
+      padding: 18px;
+
+      background: #202124;
+
+      text-align: center;
+
+    }
+
+
+    .header h1 {
+
+      margin: 0;
+
+      font-size: 20px;
+
+    }
+
+
+    .header p {
+
+      margin: 6px 0 0;
+
+      color: #b8b8b8;
+
+      font-size: 13px;
+
+    }
+
+
+    .scanner {
+
+      flex: 1;
+
+      display: flex;
+
+      flex-direction: column;
+
+    }
+
+
+    .video-container {
+
+      position: relative;
+
+      flex: 1;
+
+      background: black;
+
+      min-height: 60vh;
+
+      overflow: hidden;
+
+    }
+
+
+    #video {
+
+      width: 100%;
+
+      height: 100%;
+
+      object-fit: cover;
+
+    }
+
+
+    .frame {
+
+      position: absolute;
+
+      top: 50%;
+
+      left: 50%;
+
+      width: 82%;
+
+      height: 25%;
+
+      transform:
+        translate(-50%, -50%);
+
+      border:
+        2px solid
+        rgba(255,255,255,.3);
+
+      pointer-events: none;
+
+    }
+
+
+    .corner {
+
+      position: absolute;
+
+      width: 30px;
+
+      height: 30px;
+
+      border-color: #00ff88;
+
+      border-style: solid;
+
+    }
+
+
+    .top-left {
+
+      top: -2px;
+
+      left: -2px;
+
+      border-width:
+        4px 0 0 4px;
+
+    }
+
+
+    .top-right {
+
+      top: -2px;
+
+      right: -2px;
+
+      border-width:
+        4px 4px 0 0;
+
+    }
+
+
+    .bottom-left {
+
+      bottom: -2px;
+
+      left: -2px;
+
+      border-width:
+        0 0 4px 4px;
+
+    }
+
+
+    .bottom-right {
+
+      bottom: -2px;
+
+      right: -2px;
+
+      border-width:
+        0 4px 4px 0;
+
+    }
+
+
+    .line {
+
+      position: absolute;
+
+      left: 0;
+
+      right: 0;
+
+      top: 50%;
+
+      height: 2px;
+
+      background: #00ff88;
+
+      animation:
+        scan 1.8s infinite;
+
+    }
+
+
+    @keyframes scan {
+
+      0% {
+        transform: translateY(-45px);
+      }
+
+      50% {
+        transform: translateY(45px);
+      }
+
+      100% {
+        transform: translateY(-45px);
+      }
+
+    }
+
+
+    .status {
+
+      padding: 18px;
+
+      text-align: center;
+
+      background: #202124;
+
+      font-size: 15px;
+
+      font-weight: 600;
+
+    }
+
+
+    .actions {
+
+      padding: 15px;
+
+      background: #202124;
+
+    }
+
+
+    button {
+
+      width: 100%;
+
+      height: 48px;
+
+      border: none;
+
+      border-radius: 10px;
+
+      background: #1a73e8;
+
+      color: white;
+
+      font-size: 16px;
+
+      font-weight: 700;
+
+      cursor: pointer;
+
+    }
+
+
+    button:disabled {
+
+      opacity: .5;
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+
+<div class="app">
+
+
+  <div class="header">
+
+    <h1>
+      📷 Escáner de inventario
+    </h1>
+
+    <p>
+      Apunte al código de barras del equipo
+    </p>
+
+  </div>
+
+
+  <div class="scanner">
+
+
+    <div class="video-container">
+
+
+      <video
+        id="video"
+        autoplay
+        muted
+        playsinline
+      ></video>
+
+
+      <div class="frame">
+
+        <div class="corner top-left"></div>
+
+        <div class="corner top-right"></div>
+
+        <div class="corner bottom-left"></div>
+
+        <div class="corner bottom-right"></div>
+
+        <div class="line"></div>
+
+      </div>
+
+
+    </div>
+
+
+    <div
+      id="status"
+      class="status"
+    >
+
+      Iniciando cámara...
+
+    </div>
+
+
+    <div class="actions">
+
+      <button
+        id="btnCancelar"
+        onclick="cancelar()"
+      >
+
+        Cancelar
+
+      </button>
+
+    </div>
+
+
+  </div>
+
+
+</div>
+
+
+<script>
+
+
+/****************************************************
+ * VARIABLES
+ ****************************************************/
+
+let reader = null;
+
+let controls = null;
+
+let activo = true;
+
+let returnUrl = null;
+
+
+/****************************************************
+ * INICIO
+ ****************************************************/
+
+document.addEventListener(
+  'DOMContentLoaded',
+  iniciar
+);
+
+
+/****************************************************
+ * INICIAR
+ ****************************************************/
+
+async function iniciar() {
+
+  const status =
+    document.getElementById(
+      'status'
+    );
+
+
+  try {
+
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+
+    returnUrl =
+      params.get(
+        'returnUrl'
+      );
+
+
+    if (!returnUrl) {
+
+      throw new Error(
+        'No se recibió la dirección de retorno.'
+      );
+
+    }
+
+
+    if (
+      typeof ZXingBrowser ===
+      'undefined'
+    ) {
+
+      throw new Error(
+        'No se pudo cargar ZXing.'
+      );
+
+    }
+
+
+    if (
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
+
+      throw new Error(
+        'Este navegador no permite utilizar la cámara.'
+      );
+
+    }
+
+
+    status.textContent =
+      'Solicitando permiso para la cámara...';
+
+
+    /*
+     * Pedimos explícitamente el permiso.
+     */
+
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+
+        video: {
+          facingMode: {
+            ideal: 'environment'
+          }
+        },
+
+        audio: false
+
+      });
+
+
+    /*
+     * Cerramos inmediatamente este stream.
+     * ZXing abrirá posteriormente el dispositivo.
+     */
+
+    stream
+      .getTracks()
+      .forEach(
+        function(track) {
+
+          track.stop();
+
+        }
+      );
+
+
+    status.textContent =
+      'Buscando cámara...';
+
+
+    reader =
+      new ZXingBrowser
+        .BrowserMultiFormatReader();
+
+
+    const dispositivos =
+      await ZXingBrowser
+        .BrowserCodeReader
+        .listVideoInputDevices();
+
+
+    if (
+      !dispositivos ||
+      dispositivos.length === 0
+    ) {
+
+      throw new Error(
+        'No se encontró ninguna cámara.'
+      );
+
+    }
+
+
+    let dispositivo =
+      dispositivos[0];
+
+
+    /*
+     * Preferir cámara trasera.
+     */
+
+    for (
+      const camara
+      of dispositivos
+    ) {
+
+      const label =
+        String(
+          camara.label || ''
+        ).toLowerCase();
+
+
+      if (
+
+        label.includes('back') ||
+
+        label.includes('rear') ||
+
+        label.includes('environment') ||
+
+        label.includes('trasera') ||
+
+        label.includes('posterior')
+
+      ) {
+
+        dispositivo =
+          camara;
+
+        break;
+
+      }
+
+    }
+
+
+    status.textContent =
+      'Apunte al código de barras...';
+
+
+    const video =
+      document.getElementById(
+        'video'
+      );
+
+
+    controls =
+      await reader
+        .decodeFromVideoDevice(
+
+          dispositivo.deviceId,
+
+          video,
+
+          function(
+            result,
+            error
+          ) {
+
+            if (!activo) {
+
+              return;
+
+            }
+
+
+            if (result) {
+
+              const codigo =
+                result
+                  .getText()
+                  .trim();
+
+
+              if (codigo) {
+
+                enviarResultado(
+                  codigo
+                );
+
+              }
+
+            }
+
+          }
+
+        );
+
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+
+    activo =
+      false;
+
+
+    status.innerHTML =
+
+      '⚠ Cámara no disponible.<br><br>' +
+
+      '<small>' +
+
+      explicarError(error) +
+
+      '</small>';
+
+  }
+
+}
+
+
+/****************************************************
+ * EXPLICAR ERROR
+ ****************************************************/
+
+function explicarError(error) {
+
+  if (!error) {
+
+    return 'Error desconocido.';
+
+  }
+
+
+  const nombre =
+    error.name || '';
+
+
+  if (
+    nombre ===
+    'NotAllowedError'
+  ) {
+
+    return (
+      'El navegador no permitió el acceso a la cámara. ' +
+      'Revise el permiso de cámara para esta página.'
+    );
+
+  }
+
+
+  if (
+    nombre ===
+    'NotFoundError'
+  ) {
+
+    return (
+      'No se encontró una cámara disponible.'
+    );
+
+  }
+
+
+  if (
+    nombre ===
+    'NotReadableError'
+  ) {
+
+    return (
+      'La cámara está siendo utilizada por otra aplicación.'
+    );
+
+  }
+
+
+  return (
+    error.message ||
+    String(error)
+  );
+
+}
+
+
+/****************************************************
+ * ENVIAR RESULTADO
+ ****************************************************/
+
+function enviarResultado(
+  codigo
+) {
+
+  if (!returnUrl) {
+
+    return;
+
+  }
+
+
+  activo =
+    false;
+
+
+  if (controls) {
+
+    try {
+
+      controls.stop();
+
+    } catch (e) {
+
+      console.log(e);
+
+    }
+
+  }
+
+
+  if (reader) {
+
+    try {
+
+      reader.reset();
+
+    } catch (e) {
+
+      console.log(e);
+
+    }
+
+  }
+
+
+  const video =
+    document.getElementById(
+      'video'
+    );
+
+
+  if (
+    video &&
+    video.srcObject
+  ) {
+
+    video.srcObject
+      .getTracks()
+      .forEach(
+        function(track) {
+
+          track.stop();
+
+        }
+      );
+
+    video.srcObject =
+      null;
+
+  }
+
+
+  document
+    .getElementById(
+      'status'
+    )
+    .textContent =
+    '✓ Código leído: ' +
+    codigo;
+
+
+  /*
+   * Agregar el serial a la URL de regreso.
+   */
+
+  const separador =
+    returnUrl.includes('?')
+      ? '&'
+      : '?';
+
+
+  const destino =
+    returnUrl +
+    separador +
+    'serial=' +
+    encodeURIComponent(
+      codigo
+    );
+
+
+  /*
+   * Regresar a la aplicación.
+   */
+
+  window.location.href =
+    destino;
+
+}
+
+
+/****************************************************
+ * CANCELAR
+ ****************************************************/
+
+function cancelar() {
+
+  activo =
+    false;
+
+
+  if (controls) {
+
+    try {
+
+      controls.stop();
+
+    } catch (e) {
+
+      console.log(e);
+
+    }
+
+  }
+
+
+  if (reader) {
+
+    try {
+
+      reader.reset();
+
+    } catch (e) {
+
+      console.log(e);
+
+    }
+
+  }
+
+
+  if (returnUrl) {
+
+    window.location.href =
+      returnUrl;
+
+  } else {
+
+    window.history.back();
+
+  }
+
+}
+
+</script>
+
+
+</body>
+
+</html>
