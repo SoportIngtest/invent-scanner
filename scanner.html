@@ -443,21 +443,6 @@
     }
 
 
-    .resolution-info {
-
-      padding: 8px 12px;
-
-      background: #18191b;
-
-      color: #9aa0a6;
-
-      font-size: 11px;
-
-      text-align: center;
-
-    }
-
-
     @media (max-width: 480px) {
 
       .actions {
@@ -558,20 +543,6 @@
 
 
     <!-- ========================================
-         RESOLUCIÓN
-         ======================================== -->
-
-    <div
-      id="resolutionInfo"
-      class="resolution-info"
-    >
-
-      Preparando cámara...
-
-    </div>
-
-
-    <!-- ========================================
          ESTADO
          ======================================== -->
 
@@ -617,8 +588,7 @@
 
       Si la cámara no detecta el código,
       pulse <strong>📸 Tomar foto</strong>.
-      Se capturará una fotografía de alta
-      resolución y se analizará completa.
+      La imagen se analizará nuevamente.
 
     </div>
 
@@ -699,8 +669,6 @@ let codigoDetectado = '';
 
 let dispositivoSeleccionado = null;
 
-let streamActual = null;
-
 
 /****************************************************
  * INICIO
@@ -754,11 +722,7 @@ async function iniciar() {
       'Solicitando permiso para la cámara...';
 
 
-    /*
-     * Solicitar inicialmente cámara trasera.
-     */
-
-    streamActual =
+    const stream =
       await navigator.mediaDevices.getUserMedia({
 
         video: {
@@ -768,15 +732,11 @@ async function iniciar() {
           },
 
           width: {
-            ideal: 3840
+            ideal: 1920
           },
 
           height: {
-            ideal: 2160
-          },
-
-          frameRate: {
-            ideal: 30
+            ideal: 1080
           }
 
         },
@@ -786,21 +746,13 @@ async function iniciar() {
       });
 
 
-    /*
-     * Mostrar resolución REAL obtenida.
-     */
+    stream
+      .getTracks()
+      .forEach(function(track) {
 
-    actualizarResolucion(
-      streamActual
-    );
+        track.stop();
 
-
-    /*
-     * Detener temporalmente este stream.
-     * Después ZXing abrirá el dispositivo.
-     */
-
-    detenerStream();
+      });
 
 
     status.textContent =
@@ -829,10 +781,6 @@ async function iniciar() {
 
     }
 
-
-    /*
-     * Buscar cámara trasera.
-     */
 
     dispositivoSeleccionado =
       dispositivos[0];
@@ -895,67 +843,6 @@ async function iniciar() {
       explicarError(error) +
 
       '</small>';
-
-  }
-
-}
-
-
-/****************************************************
- * ACTUALIZAR RESOLUCIÓN
- ****************************************************/
-
-function actualizarResolucion(
-  stream
-) {
-
-  try {
-
-    if (!stream) {
-
-      return;
-
-    }
-
-
-    const track =
-      stream.getVideoTracks()[0];
-
-
-    if (!track) {
-
-      return;
-
-    }
-
-
-    const settings =
-      track.getSettings();
-
-
-    const width =
-      settings.width || '?';
-
-
-    const height =
-      settings.height || '?';
-
-
-    document.getElementById(
-      'resolutionInfo'
-    ).textContent =
-
-      'Cámara disponible: ' +
-      width +
-      ' × ' +
-      height;
-
-  } catch (error) {
-
-    console.warn(
-      'No se pudo obtener resolución:',
-      error
-    );
 
   }
 
@@ -1045,42 +932,6 @@ async function iniciarLectura() {
       );
 
 
-    /*
-     * Obtener información de resolución
-     * después de iniciar ZXing.
-     */
-
-    setTimeout(
-      function() {
-
-        try {
-
-          const videoTrack =
-            video.srcObject
-              ? video.srcObject
-                  .getVideoTracks()[0]
-              : null;
-
-
-          if (videoTrack) {
-
-            actualizarResolucion(
-              video.srcObject
-            );
-
-          }
-
-        } catch (e) {
-
-          console.warn(e);
-
-        }
-
-      },
-      800
-    );
-
-
   } catch (error) {
 
     console.error(
@@ -1103,6 +954,11 @@ async function iniciarLectura() {
 async function mostrarResultado(
   codigo
 ) {
+
+  /*
+   * Evitar múltiples detecciones
+   * consecutivas.
+   */
 
   if (!activo) {
 
@@ -1158,7 +1014,36 @@ async function mostrarResultado(
   ).disabled = false;
 
 
-  await copiarAutomaticamente();
+  /*
+   * Copiar automáticamente.
+   *
+   * IMPORTANTE:
+   * Esperamos a que la operación de copia
+   * termine completamente.
+   */
+
+  const copiado =
+    await copiarAutomaticamente();
+
+
+  /*
+   * Solamente si la copia fue exitosa,
+   * ejecutar la misma función utilizada
+   * por el botón SALIR.
+   */
+
+  if (copiado) {
+
+    setTimeout(
+      function() {
+
+        salir();
+
+      },
+      300
+    );
+
+  }
 
 }
 
@@ -1171,7 +1056,7 @@ async function copiarAutomaticamente() {
 
   if (!codigoDetectado) {
 
-    return;
+    return false;
 
   }
 
@@ -1186,7 +1071,14 @@ async function copiarAutomaticamente() {
     document.getElementById(
       'status'
     ).textContent =
-      '✓ Código detectado y copiado al portapapeles.';
+      '✓ Código copiado. Regresando...';
+
+
+    /*
+     * La copia terminó correctamente.
+     */
+
+    return true;
 
 
   } catch (error) {
@@ -1201,6 +1093,14 @@ async function copiarAutomaticamente() {
       'status'
     ).textContent =
       '✓ Código detectado. Pulse "Copiar".';
+
+
+    /*
+     * Si no se pudo copiar,
+     * NO cerramos la ventana.
+     */
+
+    return false;
 
   }
 
@@ -1230,10 +1130,14 @@ async function copiarResultado() {
     document.getElementById(
       'status'
     ).textContent =
-      '✓ Código copiado al portapapeles.';
+      '✓ Código copiado.';
 
 
   } catch (error) {
+
+    /*
+     * Segundo intento usando textarea.
+     */
 
     try {
 
@@ -1292,10 +1196,10 @@ async function copiarResultado() {
 
 
 /****************************************************
- * TOMAR FOTO EN ALTA RESOLUCIÓN
+ * TOMAR FOTO
  ****************************************************/
 
-async function tomarFoto() {
+function tomarFoto() {
 
   const video =
     document.getElementById(
@@ -1303,31 +1207,26 @@ async function tomarFoto() {
     );
 
 
-  const status =
+  const canvas =
     document.getElementById(
-      'status'
+      'canvas'
     );
 
 
-  const boton =
+  const image =
     document.getElementById(
-      'btnFoto'
+      'capturedImage'
     );
-
-
-  if (!video) {
-
-    return;
-
-  }
 
 
   if (
-    !video.videoWidth ||
-    !video.videoHeight
+    !video ||
+    !video.videoWidth
   ) {
 
-    status.textContent =
+    document.getElementById(
+      'status'
+    ).textContent =
       '⚠ La cámara todavía no está lista.';
 
     return;
@@ -1335,1100 +1234,217 @@ async function tomarFoto() {
   }
 
 
-  boton.disabled =
-    true;
-
+  /*
+   * Detener lectura continua.
+   */
 
   activo =
     false;
 
 
-  status.textContent =
-    '📸 Preparando captura de alta resolución...';
-
-
-  /*
-   * Detener el lector actual.
-   */
-
   detenerCamara();
 
 
-  try {
-
-    /*
-     * Abrir una cámara independiente
-     * específicamente para realizar
-     * la fotografía.
-     */
-
-    const streamFoto =
-      await abrirCamaraAltaResolucion();
-
-
-    const track =
-      streamFoto.getVideoTracks()[0];
-
-
-    if (!track) {
-
-      throw new Error(
-        'No se pudo obtener la cámara.'
-      );
-
-    }
-
-
-    /*
-     * Esperar un momento para que la cámara
-     * estabilice exposición y enfoque.
-     */
-
-    status.textContent =
-      '📷 Enfocando y preparando fotografía...';
-
-
-    await esperar(
-      700
-    );
-
-
-    /*
-     * Obtener resolución real.
-     */
-
-    const settings =
-      track.getSettings();
-
-
-    const width =
-      settings.width ||
-      video.videoWidth;
-
-
-    const height =
-      settings.height ||
-      video.videoHeight;
-
-
-    document.getElementById(
-      'resolutionInfo'
-    ).textContent =
-
-      'Fotografía: ' +
-      width +
-      ' × ' +
-      height;
-
-
-    /*
-     * Crear canvas EXACTAMENTE con la
-     * resolución que entrega la cámara.
-     */
-
-    const canvas =
-      document.getElementById(
-        'canvas'
-      );
-
-
-    canvas.width =
-      width;
-
-    canvas.height =
-      height;
-
-
-    const ctx =
-      canvas.getContext(
-        '2d',
-        {
-          alpha: false,
-          desynchronized: false
-        }
-      );
-
-
-    /*
-     * Si ImageCapture está disponible,
-     * utilizar la captura fotográfica
-     * nativa del dispositivo.
-     */
-
-    if (
-      typeof ImageCapture !==
-      'undefined'
-    ) {
-
-      try {
-
-        const imageCapture =
-          new ImageCapture(
-            track
-          );
-
-
-        const photo =
-          await imageCapture.takePhoto();
-
-
-        /*
-         * Dibujar la fotografía nativa.
-         */
-
-        const bitmap =
-          await createImageBitmap(
-            photo
-          );
-
-
-        canvas.width =
-          bitmap.width;
-
-        canvas.height =
-          bitmap.height;
-
-
-        ctx.drawImage(
-          bitmap,
-          0,
-          0,
-          bitmap.width,
-          bitmap.height
-        );
-
-
-        if (
-          bitmap.close
-        ) {
-
-          bitmap.close();
-
-        }
-
-
-      } catch (imageCaptureError) {
-
-        console.warn(
-          'ImageCapture no disponible, usando frame del video:',
-          imageCaptureError
-        );
-
-
-        /*
-         * Fallback: captura directa
-         * del video en resolución real.
-         */
-
-        capturarDesdeVideo(
-          video,
-          canvas,
-          ctx
-        );
-
-      }
-
-    } else {
-
-      capturarDesdeVideo(
-        video,
-        canvas,
-        ctx
-      );
-
-    }
-
-
-    /*
-     * Convertir a JPEG de alta calidad.
-     */
-
-    const dataUrl =
-      canvas.toDataURL(
-        'image/jpeg',
-        0.98
-      );
-
-
-    /*
-     * Mostrar fotografía capturada.
-     */
-
-    const image =
-      document.getElementById(
-        'capturedImage'
-      );
-
-
-    image.src =
-      dataUrl;
-
-
-    document
-      .getElementById(
-        'photoArea'
-      )
-      .classList.add(
-        'visible'
-      );
-
-
-    /*
-     * Cerrar cámara fotográfica.
-     */
-
-    streamFoto
-      .getTracks()
-      .forEach(
-        function(track) {
-
-          track.stop();
-
-        }
-      );
-
-
-    /*
-     * Analizar fotografía COMPLETA.
-     */
-
-    status.textContent =
-      '🔎 Analizando fotografía completa...';
-
-
-    await analizarImagenAltaResolucion(
-      dataUrl
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      'Error capturando fotografía:',
-      error
-    );
-
-
-    status.textContent =
-      '⚠ No se pudo realizar la fotografía: ' +
-      (error.message || error);
-
-
-  } finally {
-
-    boton.disabled =
-      false;
-
-  }
-
-}
-
-
-/****************************************************
- * ABRIR CÁMARA PARA FOTOGRAFÍA
- ****************************************************/
-
-async function abrirCamaraAltaResolucion() {
-
   /*
-   * Primero solicitamos una resolución
-   * muy alta.
+   * Capturar imagen con resolución
+   * nativa del video.
    */
 
-  const restricciones = {
-
-    video: {
-
-      facingMode: {
-        ideal: 'environment'
-      },
-
-      width: {
-        ideal: 3840
-      },
-
-      height: {
-        ideal: 2160
-      },
-
-      frameRate: {
-        ideal: 30
-      }
-
-    },
-
-    audio: false
-
-  };
-
-
-  try {
-
-    const stream =
-      await navigator.mediaDevices
-        .getUserMedia(
-          restricciones
-        );
-
-
-    const track =
-      stream.getVideoTracks()[0];
-
-
-    /*
-     * Consultar capacidades reales.
-     */
-
-    if (
-      track &&
-      track.getCapabilities
-    ) {
-
-      const capabilities =
-        track.getCapabilities();
-
-
-      const widthMax =
-        capabilities.width &&
-        capabilities.width.max
-          ? capabilities.width.max
-          : null;
-
-
-      const heightMax =
-        capabilities.height &&
-        capabilities.height.max
-          ? capabilities.height.max
-          : null;
-
-
-      /*
-       * Si el navegador informa máximos,
-       * solicitar esos máximos.
-       */
-
-      if (
-        widthMax &&
-        heightMax
-      ) {
-
-        try {
-
-          await track.applyConstraints({
-
-            width: {
-              ideal: widthMax
-            },
-
-            height: {
-              ideal: heightMax
-            },
-
-            frameRate: {
-              ideal: 30
-            }
-
-          });
-
-        } catch (constraintError) {
-
-          console.warn(
-            'No se pudieron aplicar máximos:',
-            constraintError
-          );
-
-        }
-
-      }
-
-    }
-
-
-    actualizarResolucion(
-      stream
-    );
-
-
-    return stream;
-
-
-  } catch (error) {
-
-    /*
-     * Segundo intento más compatible.
-     */
-
-    console.warn(
-      'No se pudo abrir cámara alta:',
-      error
-    );
-
-
-    return await navigator.mediaDevices
-      .getUserMedia({
-
-        video: {
-
-          facingMode: {
-            ideal: 'environment'
-          },
-
-          width: {
-            ideal: 1920
-          },
-
-          height: {
-            ideal: 1080
-          }
-
-        },
-
-        audio: false
-
-      });
-
-  }
-
-}
-
-
-/****************************************************
- * CAPTURAR DESDE VIDEO
- ****************************************************/
-
-function capturarDesdeVideo(
-  video,
-  canvas,
-  ctx
-) {
-
-  const width =
+  canvas.width =
     video.videoWidth;
 
-
-  const height =
+  canvas.height =
     video.videoHeight;
 
 
-  canvas.width =
-    width;
-
-
-  canvas.height =
-    height;
+  const ctx =
+    canvas.getContext(
+      '2d'
+    );
 
 
   ctx.drawImage(
     video,
     0,
     0,
-    width,
-    height
+    canvas.width,
+    canvas.height
+  );
+
+
+  const dataUrl =
+    canvas.toDataURL(
+      'image/jpeg',
+      0.95
+    );
+
+
+  image.src =
+    dataUrl;
+
+
+  document
+    .getElementById(
+      'photoArea'
+    )
+    .classList.add(
+      'visible'
+    );
+
+
+  document.getElementById(
+    'status'
+  ).textContent =
+    'Analizando fotografía...';
+
+
+  analizarImagen(
+    dataUrl
   );
 
 }
 
 
 /****************************************************
- * ANALIZAR IMAGEN DE ALTA RESOLUCIÓN
+ * ANALIZAR IMAGEN
  ****************************************************/
 
-async function analizarImagenAltaResolucion(
+async function analizarImagen(
   dataUrl
 ) {
 
-  const status =
-    document.getElementById(
-      'status'
-    );
-
-
   try {
 
-    /*
-     * Cargar imagen.
-     */
-
     const img =
-      await cargarImagen(
-        dataUrl
-      );
+      new Image();
 
 
-    /*
-     * No reducimos inmediatamente la fotografía.
-     *
-     * Primero intentamos analizarla completa.
-     */
+    img.onload =
+      async function() {
 
-    status.textContent =
-      '🔎 Intento 1/6: analizando imagen original...';
+        try {
 
+          const canvas =
+            document.createElement(
+              'canvas'
+            );
 
-    let resultado =
-      await intentarDecodificarCanvas(
-        img,
-        1,
-        false
-      );
 
+          const maxWidth =
+            1800;
 
-    if (resultado) {
 
-      mostrarResultado(
-        resultado
-      );
+          const escala =
+            img.width > maxWidth
+              ? maxWidth / img.width
+              : 1;
 
-      return;
 
-    }
+          canvas.width =
+            Math.round(
+              img.width * escala
+            );
 
 
-    /*
-     * Segundo intento:
-     * escala de grises + contraste.
-     */
+          canvas.height =
+            Math.round(
+              img.height * escala
+            );
 
-    status.textContent =
-      '🔎 Intento 2/6: mejorando contraste...';
 
+          const ctx =
+            canvas.getContext(
+              '2d',
+              {
+                willReadFrequently: true
+              }
+            );
 
-    resultado =
-      await intentarDecodificarCanvas(
-        img,
-        1,
-        true
-      );
 
+          ctx.drawImage(
+            img,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          );
 
-    if (resultado) {
 
-      mostrarResultado(
-        resultado
-      );
+          const lector =
+            new ZXingBrowser
+              .BrowserMultiFormatReader();
 
-      return;
 
-    }
+          const resultado =
+            await lector
+              .decodeFromImageUrl(
+                canvas.toDataURL(
+                  'image/jpeg',
+                  0.95
+                )
+              );
 
 
-    /*
-     * Tercer intento:
-     * imagen reducida moderadamente.
-     *
-     * Algunas cámaras producen imágenes
-     * demasiado grandes para el decoder.
-     */
+          if (
+            resultado &&
+            resultado.getText()
+          ) {
 
-    status.textContent =
-      '🔎 Intento 3/6: optimizando resolución...';
+            mostrarResultado(
+              resultado
+                .getText()
+                .trim()
+            );
 
 
-    resultado =
-      await intentarDecodificarCanvas(
-        img,
-        0.75,
-        false
-      );
+            return;
 
+          }
 
-    if (resultado) {
 
-      mostrarResultado(
-        resultado
-      );
+          throw new Error(
+            'No se encontró código.'
+          );
 
-      return;
 
-    }
+        } catch (error) {
 
+          console.warn(
+            'No se pudo analizar la imagen:',
+            error
+          );
 
-    /*
-     * Cuarto intento:
-     * escala 0.75 + contraste.
-     */
 
-    status.textContent =
-      '🔎 Intento 4/6: procesando contraste...';
+          document.getElementById(
+            'status'
+          ).textContent =
+            '⚠ No se encontró un código. Acerque la cámara o vuelva a tomar la foto.';
 
+          activo =
+            false;
 
-    resultado =
-      await intentarDecodificarCanvas(
-        img,
-        0.75,
-        true
-      );
+        }
 
+      };
 
-    if (resultado) {
 
-      mostrarResultado(
-        resultado
-      );
-
-      return;
-
-    }
-
-
-    /*
-     * Quinto intento:
-     * reducir más para códigos muy pequeños.
-     */
-
-    status.textContent =
-      '🔎 Intento 5/6: buscando códigos pequeños...';
-
-
-    resultado =
-      await intentarDecodificarCanvas(
-        img,
-        0.5,
-        false
-      );
-
-
-    if (resultado) {
-
-      mostrarResultado(
-        resultado
-      );
-
-      return;
-
-    }
-
-
-    /*
-     * Sexto intento:
-     * escala pequeña + contraste.
-     */
-
-    status.textContent =
-      '🔎 Intento 6/6: último análisis...';
-
-
-    resultado =
-      await intentarDecodificarCanvas(
-        img,
-        0.5,
-        true
-      );
-
-
-    if (resultado) {
-
-      mostrarResultado(
-        resultado
-      );
-
-      return;
-
-    }
-
-
-    /*
-     * No encontrado.
-     */
-
-    activo =
-      false;
-
-
-    status.textContent =
-      '⚠ No se encontró ningún código. ' +
-      'Acerque el código, mejore la iluminación y vuelva a tomar la foto.';
+    img.src =
+      dataUrl;
 
 
   } catch (error) {
 
     console.error(
-      'Error analizando imagen:',
       error
     );
 
 
-    activo =
-      false;
-
-
-    status.textContent =
-      '⚠ No se pudo analizar la fotografía. ' +
-      (error.message || '');
+    document.getElementById(
+      'status'
+    ).textContent =
+      '⚠ No se pudo analizar la fotografía.';
 
   }
-
-}
-
-
-/****************************************************
- * INTENTAR DECODIFICAR CANVAS
- ****************************************************/
-
-async function intentarDecodificarCanvas(
-  img,
-  escala,
-  mejorar
-) {
-
-  try {
-
-    const canvas =
-      document.createElement(
-        'canvas'
-      );
-
-
-    let width =
-      Math.round(
-        img.width *
-        escala
-      );
-
-
-    let height =
-      Math.round(
-        img.height *
-        escala
-      );
-
-
-    /*
-     * Limitar únicamente si la imagen
-     * es exageradamente grande.
-     *
-     * 3000 px es suficiente para ZXing
-     * y evita problemas de memoria.
-     */
-
-    const maxDimension =
-      3000;
-
-
-    if (
-      width >
-      maxDimension ||
-      height >
-      maxDimension
-    ) {
-
-      const factor =
-        Math.min(
-          maxDimension / width,
-          maxDimension / height
-        );
-
-
-      width =
-        Math.round(
-          width *
-          factor
-        );
-
-
-      height =
-        Math.round(
-          height *
-          factor
-        );
-
-    }
-
-
-    canvas.width =
-      width;
-
-
-    canvas.height =
-      height;
-
-
-    const ctx =
-      canvas.getContext(
-        '2d',
-        {
-          willReadFrequently: true
-        }
-      );
-
-
-    /*
-     * Dibujar imagen.
-     */
-
-    ctx.drawImage(
-      img,
-      0,
-      0,
-      width,
-      height
-    );
-
-
-    /*
-     * Opcionalmente mejorar contraste.
-     */
-
-    if (mejorar) {
-
-      mejorarImagen(
-        ctx,
-        width,
-        height
-      );
-
-    }
-
-
-    /*
-     * Convertir canvas a Blob/Data URL.
-     */
-
-    const dataUrl =
-      canvas.toDataURL(
-        'image/jpeg',
-        0.95
-      );
-
-
-    /*
-     * Crear un lector nuevo para cada
-     * intento.
-     */
-
-    const lector =
-      new ZXingBrowser
-        .BrowserMultiFormatReader();
-
-
-    /*
-     * Analizar imagen completa.
-     */
-
-    const resultado =
-      await lector
-        .decodeFromImageUrl(
-          dataUrl
-        );
-
-
-    if (
-      resultado &&
-      resultado.getText()
-    ) {
-
-      return resultado
-        .getText()
-        .trim();
-
-    }
-
-
-  } catch (error) {
-
-    console.warn(
-      'Intento de decodificación fallido:',
-      error
-    );
-
-  }
-
-
-  return null;
-
-}
-
-
-/****************************************************
- * MEJORAR IMAGEN
- ****************************************************/
-
-function mejorarImagen(
-  ctx,
-  width,
-  height
-) {
-
-  try {
-
-    const imageData =
-      ctx.getImageData(
-        0,
-        0,
-        width,
-        height
-      );
-
-
-    const data =
-      imageData.data;
-
-
-    /*
-     * Conversión a escala de grises
-     * + aumento moderado de contraste.
-     */
-
-    const contraste =
-      1.35;
-
-
-    const factor =
-      (
-        259 *
-        (
-          contraste + 255
-        )
-      ) /
-      (
-        255 *
-        (
-          259 - contraste
-        )
-      );
-
-
-    for (
-      let i = 0;
-      i < data.length;
-      i += 4
-    ) {
-
-      const r =
-        data[i];
-
-
-      const g =
-        data[i + 1];
-
-
-      const b =
-        data[i + 2];
-
-
-      const gris =
-        (
-          0.299 * r +
-          0.587 * g +
-          0.114 * b
-        );
-
-
-      let nuevo =
-        factor *
-        (
-          gris - 128
-        ) +
-        128;
-
-
-      nuevo =
-        Math.max(
-          0,
-          Math.min(
-            255,
-            nuevo
-          )
-        );
-
-
-      data[i] =
-        nuevo;
-
-
-      data[i + 1] =
-        nuevo;
-
-
-      data[i + 2] =
-        nuevo;
-
-    }
-
-
-    ctx.putImageData(
-      imageData,
-      0,
-      0
-    );
-
-
-  } catch (error) {
-
-    console.warn(
-      'No se pudo mejorar la imagen:',
-      error
-    );
-
-  }
-
-}
-
-
-/****************************************************
- * CARGAR IMAGEN
- ****************************************************/
-
-function cargarImagen(
-  dataUrl
-) {
-
-  return new Promise(
-    function(resolve, reject) {
-
-      const img =
-        new Image();
-
-
-      img.onload =
-        function() {
-
-          resolve(
-            img
-          );
-
-        };
-
-
-      img.onerror =
-        function(error) {
-
-          reject(
-            new Error(
-              'No se pudo cargar la fotografía.'
-            )
-          );
-
-        };
-
-
-      img.src =
-        dataUrl;
-
-    }
-  );
-
-}
-
-
-/****************************************************
- * ESPERAR
- ****************************************************/
-
-function esperar(
-  milisegundos
-) {
-
-  return new Promise(
-    function(resolve) {
-
-      setTimeout(
-        resolve,
-        milisegundos
-      );
-
-    }
-  );
 
 }
 
@@ -2437,7 +1453,7 @@ function esperar(
  * NUEVO ESCANEO
  ****************************************************/
 
-async function nuevoEscaneo() {
+function nuevoEscaneo() {
 
   codigoDetectado =
     '';
@@ -2471,75 +1487,12 @@ async function nuevoEscaneo() {
 
 
   document.getElementById(
-    'btnFoto'
-  ).disabled = false;
-
-
-  document.getElementById(
     'status'
   ).textContent =
     'Reiniciando cámara...';
 
 
-  /*
-   * Volver a detectar cámara.
-   */
-
-  try {
-
-    if (!reader) {
-
-      reader =
-        new ZXingBrowser
-          .BrowserMultiFormatReader();
-
-    }
-
-
-    iniciarLectura();
-
-  } catch (error) {
-
-    console.error(
-      error
-    );
-
-
-    document.getElementById(
-      'status'
-    ).textContent =
-      '⚠ No se pudo reiniciar la cámara.';
-
-  }
-
-}
-
-
-/****************************************************
- * DETENER STREAM
- ****************************************************/
-
-function detenerStream() {
-
-  if (
-    streamActual
-  ) {
-
-    streamActual
-      .getTracks()
-      .forEach(
-        function(track) {
-
-          track.stop();
-
-        }
-      );
-
-
-    streamActual =
-      null;
-
-  }
+  iniciarLectura();
 
 }
 
@@ -2581,9 +1534,6 @@ function detenerCamara() {
     }
 
   }
-
-
-  detenerStream();
 
 
   const video =
@@ -2630,7 +1580,7 @@ function salir() {
 
 
   /*
-   * Intentamos cerrar la pestaña.
+   * Cerrar la pestaña del escáner.
    */
 
   window.close();
@@ -2638,7 +1588,7 @@ function salir() {
 
   /*
    * Si el navegador no permite cerrar
-   * la pestaña, mostramos mensaje.
+   * la pestaña, mostramos instrucciones.
    */
 
   setTimeout(
